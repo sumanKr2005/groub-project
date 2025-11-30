@@ -1,0 +1,466 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Invisible Voting Booth – Simple Demo</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+
+  <style>
+    :root {
+      --bg: #020617;
+      --card: #020617;
+      --card2: #0f172a;
+      --primary: #38bdf8;
+      --primary-soft: rgba(56, 189, 248, 0.15);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --danger: #f97373;
+      --success: #4ade80;
+      --border: #1e293b;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #0f172a 0, #020617 50%, #000 100%);
+      color: var(--text);
+      padding: 24px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .app {
+      width: 100%;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 2.2rem;
+      margin: 0 0 8px;
+      background: linear-gradient(90deg,#38bdf8,#818cf8,#f97316);
+      -webkit-background-clip: text;
+      color: transparent;
+    }
+    .subtitle {
+      color: var(--muted);
+      margin-bottom: 20px;
+      font-size: 0.95rem;
+    }
+    .grid {
+      display: grid;
+      gap: 16px;
+    }
+    @media (min-width: 900px) {
+      .grid {
+        grid-template-columns: 2fr 1.3fr;
+      }
+    }
+    .card {
+      background: radial-gradient(circle at top, var(--card2), var(--card));
+      border-radius: 16px;
+      border: 1px solid var(--border);
+      padding: 18px 20px 20px;
+      box-shadow: 0 16px 50px rgba(15,23,42,0.8);
+    }
+    .card h2 {
+      margin-top: 0;
+      font-size: 1.3rem;
+    }
+    label {
+      display: block;
+      font-size: 0.8rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    input, select {
+      width: 100%;
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,0.9);
+      color: var(--text);
+      font-size: 0.95rem;
+      outline: none;
+    }
+    input:focus, select:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 1px rgba(56,189,248,0.4);
+    }
+    .row {
+      display: flex;
+      gap: 10px;
+    }
+    .row > div {
+      flex: 1;
+    }
+    button {
+      border: none;
+      border-radius: 999px;
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.15s ease-out;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-primary {
+      background: linear-gradient(135deg,#38bdf8,#4f46e5);
+      color: white;
+      box-shadow: 0 10px 30px rgba(56,189,248,0.4);
+    }
+    .btn-primary:disabled {
+      opacity: 0.6;
+      cursor: default;
+      box-shadow: none;
+    }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      font-size: 0.7rem;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid var(--border);
+      color: var(--muted);
+    }
+    .stats-row {
+      display: flex;
+      gap: 10px;
+      margin-top: 12px;
+    }
+    .stat-box {
+      flex: 1;
+      border-radius: 14px;
+      padding: 10px 12px;
+      background: rgba(15,23,42,0.9);
+      border: 1px solid var(--border);
+      text-align: center;
+    }
+    .stat-value {
+      font-size: 1.4rem;
+      font-weight: 800;
+    }
+    .stat-label {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--muted);
+    }
+    .log {
+      font-family: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+      font-size: 0.78rem;
+      background: rgba(15,23,42,0.95);
+      border-radius: 12px;
+      border: 1px solid var(--border);
+      padding: 10px;
+      max-height: 280px;
+      overflow: auto;
+      white-space: pre;
+    }
+    .pill {
+      display: inline-block;
+      font-size: 0.75rem;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: var(--primary-soft);
+      color: var(--primary);
+      border: 1px solid rgba(56,189,248,0.4);
+      margin-left: 8px;
+    }
+    .msg {
+      margin-top: 10px;
+      font-size: 0.8rem;
+    }
+    .msg.ok { color: var(--success); }
+    .msg.err { color: var(--danger); }
+  </style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Invisible Voting Booth</h1>
+<!--   <div class="subtitle">
+      Local ZK-powered demo (backend: de>http://localhost:3001</code>).<br>
+      3-step flow: Eligibility → Vote Proof → Submit Vote → Live Stats.
+    </div>
+  </header>
+-->
+  <div class="grid">
+    <!-- LEFT: interaction -->
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <h2 style="margin:0;">Voting Flow</h2>
+        <span class="badge">
+          <span style="width:7px;height:7px;border-radius:999px;background:#22c55e;"></span>
+          Backend Online
+        </span>
+      </div>
+
+      <!-- Step 1: Eligibility -->
+      <section style="margin-bottom:16px;">
+        <h3 style="margin:0 0 6px;font-size:1rem;">1 Eligibility Check</h3>
+        <p style="margin:0 0 10px;font-size:0.8rem;color:var(--muted);">
+          Prove age ≥ 18 and a valid 12-digit voter ID without revealing them (simulated).
+        </p>
+        <div class="row">
+          <div>
+            <label>Age</label>
+            <input id="age" type="number" min="16" max="120" value="">
+          </div>
+          <div>
+            <label>Voter ID (10 digits)</label>
+            <input id="voterId" type="number" placeholder="123456789012">
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <button id="btnEligibility" class="btn-primary">Check Eligibility</button>
+          <span id="eligibilityStatus" class="msg"></span>
+        </div>
+      </section>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+
+      <!-- Step 2: Vote -->
+      <section style="margin-bottom:16px;">
+        <h3 style="margin:0 0 6px;font-size:1rem;">2) Generate ZK Vote Proof</h3>
+        <p style="margin:0 0 10px;font-size:0.8rem;color:var(--muted);">
+          Choose a candidate; backend generates a proof and anonymous nullifier.
+        </p>
+        <div class="row">
+          <div>
+            <label>Candidate</label>
+            <select id="candidate">
+              <option value="0">Candidate A (0)</option>
+              <option value="1">Candidate B (1)</option>
+            </select>
+          </div>
+          <div style="display:flex;align-items:flex-end;">
+            <button id="btnVoteProof" class="btn-primary" style="width:100%;">Create Vote Proof</button>
+          </div>
+        </div>
+        <div id="voteProofStatus" class="msg"></div>
+      </section>
+
+      <hr style="border:none;border-top:1px solid var(--border);margin:14px 0;">
+
+      <!-- Step 3: Submit vote -->
+      <section>
+        <h3 style="margin:0 0 6px;font-size:1rem;">3) Submit Vote to Stats</h3>
+        <p style="margin:0 0 10px;font-size:0.8rem;color:var(--muted);">
+          Store nullifier and update results / demographics. Uses de>/submit-vote</code>.
+        </p>
+        <div class="row">
+          <div>
+            <label>Demo age for stats</label>
+            <input id="submitAge" type="number" min="18" max="120" value="25">
+          </div>
+          <div>
+            <label>Demo voter ID</label>
+            <input id="submitVoterId" type="number" value="123456789012">
+          </div>
+        </div>
+        <div style="margin-top:10px;">
+          <button id="btnSubmitVote" class="btn-primary">Submit Vote</button>
+          <button id="btnRefreshStats" class="btn-ghost">Refresh Stats</button>
+        </div>
+        <div id="submitStatus" class="msg"></div>
+      </section>
+    </div>
+
+    <!-- RIGHT: stats + logs -->
+    <div class="card">
+      <h2 style="margin-top:0;">Live Stats <span class="pill" id="winnerPill">winner: —</span></h2>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-value" id="statTotal">0</div>
+          <div class="stat-label">Total votes</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="statA">0</div>
+          <div class="stat-label">Candidate A</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="statB">0</div>
+          <div class="stat-label">Candidate B</div>
+        </div>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-box">
+          <div class="stat-value" id="age18">0</div>
+          <div class="stat-label">Age 18–25</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="age26">0</div>
+          <div class="stat-label">Age 26–35</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value" id="age36">0</div>
+          <div class="stat-label">Age 36+</div>
+        </div>
+      </div>
+
+      <div style="margin-top:12px;font-size:0.78rem;color:var(--muted);">
+        Avg vote time (last few): <span id="avgTime">N/A</span>
+      </div>
+
+      <div style="margin-top:14px;font-size:0.85rem;margin-bottom:4px;">Backend Log (latest first)</div>
+      <div id="log" class="log"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const API = 'http://localhost:3001';
+
+  let lastProof = null;        // from /vote
+  let lastPublicSignals = null;
+
+  const logEl = document.getElementById('log');
+  function addLog(msg, data) {
+    const time = new Date().toLocaleTimeString();
+    let line = '[' + time + '] ' + msg;
+    if (data !== undefined) {
+      try {
+        line += '\\n  ' + JSON.stringify(data, null, 2);
+      } catch {}
+    }
+    logEl.textContent = line + '\\n\\n' + logEl.textContent;
+  }
+
+  async function getJson(url, options) {
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      const text = await res.text();
+      throw new Error('HTTP ' + res.status + ': ' + text);
+    }
+    return res.json();
+  }
+
+  async function refreshStats() {
+    try {
+      const stats = await getJson(API + '/stats');
+      document.getElementById('statTotal').textContent = stats.totalVotes ?? 0;
+      document.getElementById('statA').textContent = stats.results?.candidateA ?? 0;
+      document.getElementById('statB').textContent = stats.results?.candidateB ?? 0;
+      document.getElementById('age18').textContent = stats.demographics?.['18-25'] ?? 0;
+      document.getElementById('age26').textContent = stats.demographics?.['26-35'] ?? 0;
+      document.getElementById('age36').textContent = stats.demographics?.['36+'] ?? 0;
+      document.getElementById('avgTime').textContent = stats.avgVoteTime ?? 'N/A';
+      document.getElementById('winnerPill').textContent = 'winner: ' + (stats.winner || '—');
+      addLog('Fetched stats', stats);
+    } catch (err) {
+      addLog('Error fetching stats', String(err));
+    }
+  }
+
+  document.getElementById('btnEligibility').onclick = async () => {
+    const age = Number(document.getElementById('age').value || 0);
+    const voterId = Number(document.getElementById('voterId').value || 0);
+    const msgEl = document.getElementById('eligibilityStatus');
+    msgEl.textContent = 'Checking…';
+    msgEl.className = 'msg';
+    try {
+      const res = await getJson(API + '/eligibility', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ age, voterId })
+      });
+      addLog('Eligibility response', res);
+      if (res.eligible) {
+        msgEl.textContent = 'Eligible (age group: ' + (res.ageGroup || 'n/a') + ')';
+        msgEl.className = 'msg ok';
+      } else {
+        msgEl.textContent = 'Not eligible';
+        msgEl.className = 'msg err';
+      }
+    } catch (err) {
+      msgEl.textContent = 'Error: ' + err.message;
+      msgEl.className = 'msg err';
+      addLog('Eligibility error', String(err));
+    }
+  };
+
+  document.getElementById('btnVoteProof').onclick = async () => {
+    const select = document.getElementById('candidate');
+    const vote = Number(select.value); // 0 or 1
+    const msgEl = document.getElementById('voteProofStatus');
+    msgEl.textContent = 'Generating proof…';
+    msgEl.className = 'msg';
+    document.getElementById('btnVoteProof').disabled = true;
+    try {
+      const res = await getJson(API + '/vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ eligible: true, vote })
+      });
+      lastProof = res.proof;
+      lastPublicSignals = res.publicSignals || [];
+      msgEl.textContent = 'Proof ready. Nullifier: ' + (lastPublicSignals[0] || 'n/a');
+      msgEl.className = 'msg ok';
+      addLog('Vote proof response', res);
+    } catch (err) {
+      msgEl.textContent = 'Error: ' + err.message;
+      msgEl.className = 'msg err';
+      addLog('Vote proof error', String(err));
+    } finally {
+      document.getElementById('btnVoteProof').disabled = false;
+    }
+  };
+
+  document.getElementById('btnSubmitVote').onclick = async () => {
+    const msgEl = document.getElementById('submitStatus');
+    if (!lastPublicSignals) {
+      msgEl.textContent = 'Generate a vote proof first.';
+      msgEl.className = 'msg err';
+      return;
+    }
+    const age = Number(document.getElementById('submitAge').value || 0);
+    const voterId = Number(document.getElementById('submitVoterId').value || 0);
+
+    msgEl.textContent = 'Submitting vote…';
+    msgEl.className = 'msg';
+    document.getElementById('btnSubmitVote').disabled = true;
+    try {
+      const res = await getJson(API + '/submit-vote', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          proof: lastProof || { demo: true },
+          publicSignals: lastPublicSignals,
+          voterId,
+          age
+        })
+      });
+      msgEl.textContent = 'Vote recorded! Tx: ' + (res.txId || 'n/a');
+      msgEl.className = 'msg ok';
+      addLog('Submit vote response', res);
+      await refreshStats();
+    } catch (err) {
+      msgEl.textContent = 'Error: ' + err.message;
+      msgEl.className = 'msg err';
+      addLog('Submit vote error', String(err));
+    } finally {
+      document.getElementById('btnSubmitVote').disabled = false;
+    }
+  };
+
+  document.getElementById('btnRefreshStats').onclick = refreshStats;
+
+  // initial stats load
+  refreshStats();
+</script>
+</body>
+</html>
